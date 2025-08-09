@@ -62,26 +62,26 @@ if __name__ == "__main__":
         txconfig = yaml.safe_load(file)
 
     # Maximum and minimum focal depth of transducer (in mm)
-    max_distance = txconfig.get("max_distance")
-    min_distance = txconfig.get("min_distance")
+    max_distance = txconfig["max_distance"]
+    min_distance = txconfig["min_distance"]
 
     # Aperture diameter (in mm)
-    transducer_diameter = txconfig.get("transducer_diameter")
+    transducer_diameter = txconfig["transducer_diameter"]
 
     # Maximum allowed angle for tilting of TUS transducer (in degrees)
-    max_angle = txconfig.get("max_angle")
+    max_angle = txconfig["max_angle"]
 
     # Offset between radiating surface and exit plane of transducer (in mm)
-    plane_offset = txconfig.get("plane_offset")
+    plane_offset = txconfig["plane_offset"]
 
     # Additional offset between skin and exit plane of transducer (in mm;
     # e.g., due to addtional gel/silicone pad)
-    additional_offset = txconfig.get("additional_offset")
+    additional_offset = txconfig["additional_offset"]
 
     # Focal distance and corresponding FLHM values (both in mm) according to, e.g.,
     # calibration report
-    focal_distance_list = txconfig.get("focal_distance_list")
-    flhm_list = txconfig.get("flhm_list")
+    focal_distance_list = txconfig["focal_distance_list"]
+    flhm_list = txconfig["flhm_list"]
 
     IDTarget = txconfig.get("IDTarget", "")
 

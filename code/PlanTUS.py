@@ -1093,15 +1093,12 @@ def prepare_acoustic_simulation(vertex_number,
 
 
     if not transducer_surface_model_filepath == "":
-
         transform_surface_model(transducer_surface_model_filepath, transform_filepath, output_filepath, "CEREBELLUM")
-        transform_surface_model(transducer_surface_model_filepath, transform_filepath, output_filepath_stl, "CEREBELLUM")
-        
     else:
         
         create_surface_transducer_model(transducer_diameter/2, 15, output_filepath)
         transform_surface_model(output_filepath, transform_filepath, output_filepath, "CEREBELLUM")
-        transform_surface_model(output_filepath, transform_filepath, output_filepath_stl, "CEREBELLUM")
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}".format(output_filepath,output_filepath_stl))
 
         
     
