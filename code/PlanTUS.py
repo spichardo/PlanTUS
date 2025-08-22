@@ -94,7 +94,7 @@ def compute_surface_metrics(surface_filepath):
     surface_filename = os.path.split(surface_filepath)[1]
     surface_name = surface_filename.replace(".surf.gii", "")
     
-    os.system('/Applications/wb_view.app/Contents/usr/bin/wb_command -logging OFF -surface-coordinates-to-metric {} {}'.format(
+    os.system(_CONNECTOME_PATH + os.sep + 'wb_command -logging OFF -surface-coordinates-to-metric {} {}'.format(
         surface_filepath,
         output_path + "/" + surface_name + "_coordinates.func.gii"))
     
@@ -102,7 +102,7 @@ def compute_surface_metrics(surface_filepath):
     surface_coordinates = np.asfarray(surface_coordinates)
     
 
-    os.system('/Applications/wb_view.app/Contents/usr/bin/wb_command -logging OFF -surface-normals {} {}'.format(
+    os.system(_CONNECTOME_PATH + os.sep + 'wb_command -logging OFF -surface-normals {} {}'.format(
         surface_filepath,
         output_path + "/" + surface_name + "_normals.func.gii"))
         
@@ -125,7 +125,7 @@ def create_pseudo_metric_nifti_from_surface(surface_filepath):
     surface_filename = os.path.split(surface_filepath)[1]
     surface_name = surface_filename.replace(".surf.gii", "")
     
-    os.system('/Applications/wb_view.app/Contents/usr/bin/wb_command -logging OFF -surface-coordinates-to-metric {} {}'.format(
+    os.system(_CONNECTOME_PATH + os.sep + 'wb_command -logging OFF -surface-coordinates-to-metric {} {}'.format(
         surface_filepath,
         output_path + "/" + surface_name + "_coordinates.func.gii"))
     

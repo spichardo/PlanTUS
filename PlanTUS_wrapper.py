@@ -310,7 +310,7 @@ if __name__ == "__main__":
     PlanTUS.create_scene(planning_scene_template_filepath, output_path + "/scene.scene", scene_variable_names, scene_variable_values)
 
     # Define the command
-    command = "/Applications/wb_view.app/Contents/MacOS/wb_view -logging FINER " + output_path + "/scene.scene"
+    command = "/Users/spichardo/workbench/macosxub_apps/wb_view.app/Contents/MacOS/wb_view -logging FINER " + output_path + "/scene.scene"
 
     # Regular expression pattern to match the phrase and the number
     pattern = re.compile(r"Switched vertex to triangle nearest vertex\s+(\.\d+)")
