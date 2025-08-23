@@ -982,8 +982,8 @@ def prepare_acoustic_simulation(vertex_number,
                                 focal_distance_list,
                                 flhm_list,
                                 placement_scene_template_filepath,
-                                ID=""
-                                ):
+                                ID="",
+                                skip_wb_view=False):
     
     
     import os
@@ -1207,7 +1207,8 @@ def prepare_acoustic_simulation(vertex_number,
 #==============================================================================
 # Visualize results
 #==============================================================================
-
+    if skip_wb_view:
+        return
     scene_variable_names = [
         'SKIN_SURFACE_FILENAME',
         'SKIN_SURFACE_FILEPATH',
