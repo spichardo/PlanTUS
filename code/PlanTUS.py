@@ -52,12 +52,12 @@ def create_scene(scene_template_filepath, output_filepath, scene_variable_names,
     
     for i in np.arange(len(scene_variable_names)):
         
-        os.system("cat " + output_path + "/scene_template_" + str(i) + ".scene | awk -v awkvar=" + scene_variable_values[i] + " '{ gsub(/" + scene_variable_names[i] +"/, awkvar); print }' > " + output_path + "/scene_template_" + str(i+1) + ".scene")
+        os.system("cat " + output_path + os.sep + "scene_template_" + str(i) + ".scene | awk -v awkvar=" + scene_variable_values[i] + " '{ gsub(/" + scene_variable_names[i] +"/, awkvar); print }' > " + output_path + os.sep +"scene_template_" + str(i+1) + ".scene")
         
-        os.remove(output_path + "/scene_template_" + str(i) + ".scene")
+        os.remove(output_path + os.sep + "scene_template_" + str(i) + ".scene")
 
-    shutil.copy(output_path + "/scene_template_" + str(i+1) + ".scene", output_filepath)
-    os.remove(output_path + "/scene_template_" + str(i+1) + ".scene")
+    shutil.copy(output_path + os.sep + "scene_template_" + str(i+1) + ".scene", output_filepath)
+    os.remove(output_path + os.sep + "scene_template_" + str(i+1) + ".scene")
     
 
 
@@ -70,17 +70,17 @@ def convert_simnibs_mesh_to_surface(simnibs_mesh_filepath, tags, mesh_name, outp
     simnibs_mesh = simnibs_mesh.crop_mesh(tags=tags)
 
     mesh_io.write_freesurfer_surface(simnibs_mesh,
-                                     output_path + "/" + mesh_name + "_freesurfer")
+                                     output_path + os.sep + mesh_name + "_freesurfer")
 
     os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}".format(
-        output_path + "/" + mesh_name + "_freesurfer",
-        output_path + "/" + mesh_name + ".stl"))
+        output_path + os.sep + mesh_name + "_freesurfer",
+        output_path + os.sep + mesh_name + ".stl"))
     
     os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}".format(
-        output_path + "/" + mesh_name + "_freesurfer",
-        output_path + "/" + mesh_name + ".surf.gii"))
+        output_path + os.sep + mesh_name + "_freesurfer",
+        output_path + os.sep + mesh_name + ".surf.gii"))
     
-    os.remove(output_path + "/" + mesh_name + "_freesurfer")
+    os.remove(output_path + os.sep + mesh_name + "_freesurfer")
 
 
 
@@ -96,21 +96,21 @@ def compute_surface_metrics(surface_filepath):
     
     os.system(_CONNECTOME_PATH + os.sep + 'wb_command -logging OFF -surface-coordinates-to-metric {} {}'.format(
         surface_filepath,
-        output_path + "/" + surface_name + "_coordinates.func.gii"))
+        output_path + os.sep + surface_name + "_coordinates.func.gii"))
     
-    surface_coordinates = surface.load_surf_data(output_path + "/" + surface_name + "_coordinates.func.gii")
+    surface_coordinates = surface.load_surf_data(output_path + os.sep + surface_name + "_coordinates.func.gii")
     surface_coordinates = np.asfarray(surface_coordinates)
     
 
     os.system(_CONNECTOME_PATH + os.sep + 'wb_command -logging OFF -surface-normals {} {}'.format(
         surface_filepath,
-        output_path + "/" + surface_name + "_normals.func.gii"))
+        output_path + os.sep + surface_name + "_normals.func.gii"))
         
-    surface_normals = surface.load_surf_data(output_path + "/" + surface_name + "_normals.func.gii")
+    surface_normals = surface.load_surf_data(output_path + os.sep + surface_name + "_normals.func.gii")
     surface_normals = np.asfarray(surface_normals)
 
-    os.remove(output_path + "/" + surface_name + "_coordinates.func.gii")
-    os.remove(output_path + "/" + surface_name + "_normals.func.gii")
+    os.remove(output_path + os.sep + surface_name + "_coordinates.func.gii")
+    os.remove(output_path + os.sep + surface_name + "_normals.func.gii")
 
     return surface_coordinates, surface_normals
 
@@ -127,22 +127,22 @@ def create_pseudo_metric_nifti_from_surface(surface_filepath):
     
     os.system(_CONNECTOME_PATH + os.sep + 'wb_command -logging OFF -surface-coordinates-to-metric {} {}'.format(
         surface_filepath,
-        output_path + "/" + surface_name + "_coordinates.func.gii"))
+        output_path + os.sep + surface_name + "_coordinates.func.gii"))
     
     os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-reduce {} MEAN {}".format(
-        output_path + "/" + surface_name + "_coordinates.func.gii",
-        output_path + "/" + surface_name + "_coordinates_MEAN.func.gii"))
+        output_path + os.sep + surface_name + "_coordinates.func.gii",
+        output_path + os.sep + surface_name + "_coordinates_MEAN.func.gii"))
     
     os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-convert -to-nifti {} {}".format(
-        output_path + "/" + surface_name + "_coordinates_MEAN.func.gii",
-        output_path + "/" + surface_name + "_coordinates_MEAN.nii.gz"))
+        output_path + os.sep + surface_name + "_coordinates_MEAN.func.gii",
+        output_path + os.sep + surface_name + "_coordinates_MEAN.nii.gz"))
     
-    nii = image.load_img(output_path + "/" + surface_name + "_coordinates_MEAN.nii.gz")
+    nii = image.load_img(output_path + os.sep + surface_name + "_coordinates_MEAN.nii.gz")
     nii_data = nii.get_fdata()
     
-    os.remove(output_path + "/" + surface_name + "_coordinates.func.gii")
-    os.remove(output_path + "/" + surface_name + "_coordinates_MEAN.func.gii")
-    os.remove(output_path + "/" + surface_name + "_coordinates_MEAN.nii.gz")
+    os.remove(output_path + os.sep + surface_name + "_coordinates.func.gii")
+    os.remove(output_path + os.sep + surface_name + "_coordinates_MEAN.func.gii")
+    os.remove(output_path + os.sep + surface_name + "_coordinates_MEAN.nii.gz")
     
     return nii, nii_data
 
@@ -190,14 +190,14 @@ def create_metric_from_pseudo_nifti(metric_name, metric_values, surface_filepath
             
     nii_new = nib.nifti1.Nifti1Image(nii_data_tmp, nii.affine, header=nii.header)
     
-    nii_new.to_filename(output_path + "/" + metric_name + "_" + surface_name + ".nii.gz")
+    nii_new.to_filename(output_path + os.sep + metric_name + "_" + surface_name + ".nii.gz")
     
     os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-convert -from-nifti {} {} {}".format(
-        output_path + "/" + metric_name + "_" + surface_name + ".nii.gz",
+        output_path + os.sep + metric_name + "_" + surface_name + ".nii.gz",
         surface_filepath,
-        output_path + "/" + metric_name + "_" + surface_name + ".func.gii"))
+        output_path + os.sep + metric_name + "_" + surface_name + ".func.gii"))
     
-    os.remove(output_path + "/" + metric_name + "_" + surface_name + ".nii.gz")
+    os.remove(output_path + os.sep + metric_name + "_" + surface_name + ".nii.gz")
     
 
 
@@ -271,37 +271,37 @@ def create_avoidance_mask(simnibs_mesh_filepath, surface_filepath, erosion_facto
     
     # create binary mask of final tissues file
     os.system(_FSL_PATH + os.sep + "fslmaths {} -bin {}".format(
-        simnibs_mesh_path + "/final_tissues.nii.gz",
-        output_path + "/final_tissues_bin.nii.gz"))
+        simnibs_mesh_path + os.sep +"final_tissues.nii.gz",
+        output_path + os.sep +"final_tissues_bin.nii.gz"))
         
     # fill holes (i.e. air cavities/sinuses) in binarzed mask
     os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -volume-fill-holes {} {}".format(
-        output_path + "/final_tissues_bin.nii.gz",
-        output_path + "/final_tissues_bin_filled.nii.gz"))
+        output_path + os.sep +"final_tissues_bin.nii.gz",
+        output_path + os.sep +"final_tissues_bin_filled.nii.gz"))
     
     # create mask of holes (air cavities/sinuses) by subtracting the previously generated masks
     os.system(_FSL_PATH + os.sep + "fslmaths {} -sub {} {}".format(
-        output_path + "/final_tissues_bin_filled.nii.gz",
-        output_path + "/final_tissues_bin.nii.gz",
-        output_path + "/final_tissues_air.nii.gz"))
+        output_path + os.sep +"final_tissues_bin_filled.nii.gz",
+        output_path + os.sep +"final_tissues_bin.nii.gz",
+        output_path + os.sep +"final_tissues_air.nii.gz"))
 
     # create 3D stl/surface/mesh file from mask
     os.system(_FREESURFER_PATH + os.sep + "mri_tessellate -n {} 1 {}".format(
-        output_path + "/final_tissues_air.nii.gz",
-        output_path + "/final_tissues_air"))
+        output_path + os.sep +"final_tissues_air.nii.gz",
+        output_path + os.sep +"final_tissues_air"))
     os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}".format(
-        output_path + "/final_tissues_air ",
-        output_path + "/final_tissues_air.surf.gii"))
+        output_path + os.sep +"final_tissues_air ",
+        output_path + os.sep +"final_tissues_air.surf.gii"))
     os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-smoothing {} 0.5 10 {}".format(
-        output_path + "/final_tissues_air.surf.gii",
-        output_path + "/final_tissues_air.surf.gii"))
+        output_path + os.sep +"final_tissues_air.surf.gii",
+        output_path + os.sep +"final_tissues_air.surf.gii"))
     os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}".format(
-        output_path + "/final_tissues_air.surf.gii",
-        output_path + "/final_tissues_air.stl"))
+        output_path + os.sep +"final_tissues_air.surf.gii",
+        output_path + os.sep +"final_tissues_air.stl"))
     
     surface_coordinates, surface_normals = compute_surface_metrics(surface_filepath)
     
-    surface_air_intersections = compute_vector_mesh_intersections(surface_coordinates, surface_normals, output_path + "/final_tissues_air.stl", 40)
+    surface_air_intersections = compute_vector_mesh_intersections(surface_coordinates, surface_normals, output_path + os.sep +"final_tissues_air.stl", 40)
     
     for i in np.arange(len(surface_air_intersections)):
         if len(surface_air_intersections[i]) > 0:
@@ -314,13 +314,13 @@ def create_avoidance_mask(simnibs_mesh_filepath, surface_filepath, erosion_facto
     convert_simnibs_mesh_to_surface(simnibs_mesh_filepath, [1006], "eyes", output_path)
     
     # get coordinates
-    eyes_coordinates, _ = compute_surface_metrics(output_path + "/eyes.surf.gii")
+    eyes_coordinates, _ = compute_surface_metrics(output_path + os.sep +"eyes.surf.gii")
     eyes_coordinates = np.array(eyes_coordinates, dtype=float)
 
     # remove intermediate files
-    for f in glob.glob(output_path + "/final_tissues*"):
+    for f in glob.glob(output_path + os.sep +"final_tissues*"):
         os.remove(f)
-    for f in glob.glob(output_path + "/eyes*"):
+    for f in glob.glob(output_path + os.sep +"eyes*"):
         os.remove(f)
 
     # separate left and right eye
@@ -338,7 +338,7 @@ def create_avoidance_mask(simnibs_mesh_filepath, surface_filepath, erosion_facto
 
 
     # get left and right tragus coordinates (-1cm) from EEG fiducials
-    eeg_fiducials = pd.read_csv(simnibs_mesh_path + "/eeg_positions/Fiducials.csv", header=1)
+    eeg_fiducials = pd.read_csv(simnibs_mesh_path + os.sep +"eeg_positions" +os.sep +"Fiducials.csv", header=1)
     LPA_coordinates = np.array(eeg_fiducials.iloc[0,1:4], dtype=np.float64)
     RPA_coordinates = np.array(eeg_fiducials.iloc[1,1:4], dtype=np.float64)
 
@@ -352,7 +352,7 @@ def create_avoidance_mask(simnibs_mesh_filepath, surface_filepath, erosion_facto
     # 
     create_metric_from_pseudo_nifti("avoidance", avoidance_mask, surface_filepath)
 
-    erode_metric(output_path + "/avoidance_" + surface_name + ".func.gii", surface_filepath, erosion_factor)
+    erode_metric(output_path + os.sep +"avoidance_" + surface_name + ".func.gii", surface_filepath, erosion_factor)
 
 
 
@@ -434,27 +434,27 @@ def stl_from_nii(nii_filepath, threshold):
     os.system(_FSL_PATH + os.sep + "fslmaths {} -thr {} -bin {}".format(
         nii_filepath,
         str(threshold),
-        nii_path + "/" + nii_name))
+        nii_path + os.sep + nii_name))
     
     os.system(_FREESURFER_PATH + os.sep + "mri_tessellate -n {}.nii.gz 1 {}".format(
-        nii_path + "/" + nii_name,
-        nii_path + "/" + nii_name))
+        nii_path + os.sep + nii_name,
+        nii_path + os.sep + nii_name))
     
     os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}.surf.gii".format(
-        nii_path + "/" + nii_name,
-        nii_path + "/" + nii_name))
+        nii_path + os.sep + nii_name,
+        nii_path + os.sep + nii_name))
     
     os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-smoothing {}.surf.gii 0.5 10 {}.surf.gii".format(
-        nii_path + "/" + nii_name,
-        nii_path + "/" + nii_name))
+        nii_path + os.sep + nii_name,
+        nii_path + os.sep + nii_name))
     
     os.system(_FREESURFER_PATH + os.sep + "mris_convert {}.surf.gii {}.stl".format(
-        nii_path + "/" + nii_name,
-        nii_path + "/" + nii_name))
+        nii_path + os.sep + nii_name,
+        nii_path + os.sep + nii_name))
     
-    os.remove(nii_path + "/" + nii_name)
-    os.remove(nii_path + "/" + nii_name + ".nii.gz")
-    os.remove(nii_path + "/" + nii_name + ".surf.gii")
+    os.remove(nii_path + os.sep + nii_name)
+    os.remove(nii_path + os.sep + nii_name + ".nii.gz")
+    os.remove(nii_path + os.sep + nii_name + ".surf.gii")
 
 
 def smooth_metric(metric_filepath, surface_filepath, FWHM):
@@ -469,7 +469,7 @@ def smooth_metric(metric_filepath, surface_filepath, FWHM):
         surface_filepath,
         metric_filepath,
         str(FWHM),
-        metric_path + "/" + metric_name + "_s" + str(FWHM) + ".func.gii"))
+        metric_path + os.sep + metric_name + "_s" + str(FWHM) + ".func.gii"))
 
 
     
@@ -494,7 +494,7 @@ def threshold_metric(metric_filepath, threshold):
     
     os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-math 'x < {}' {} -var x {}".format(
         str(threshold),
-        metric_path + "/" + metric_name + "_thresholded.func.gii",
+        metric_path + os.sep + metric_name + "_thresholded.func.gii",
         metric_filepath))
     
     
@@ -594,7 +594,7 @@ def create_kps_file_for_kPlan(position_matrix_filepath, kps_filename):
 
     # Create output filepath
     output_path, _ = os.path.split(position_matrix_filepath)
-    output_filepath = output_path + "/" + kps_filename + ".kps"
+    output_filepath = output_path + os.sep + kps_filename + ".kps"
     
     # Load position matrix
     mat_contents = scipy.io.loadmat(position_matrix_filepath)
@@ -711,14 +711,14 @@ def create_surface_ellipsoid(length, width, position_transform_filepath, referen
     gii = GiftiImage(darrays=[coord_array, face_array])
     
     # Save the GIFTI image
-    nib.save(gii, output_path + "/ellipsoid.gii")
+    nib.save(gii, output_path + os.sep +"ellipsoid.gii")
     
     # tranform .gii to .surf.gii file
     os.system(_FREESURFER_PATH + os.sep + "mris_convert " +
-              output_path + "/ellipsoid.gii" + " " + 
+              output_path + os.sep +"ellipsoid.gii" + " " + 
               output_filepath)
     
-    os.remove(output_path + "/ellipsoid.gii")
+    os.remove(output_path + os.sep +"ellipsoid.gii")
     
     # apply transform to focus (.surf.gii file) and set structure
     transform_surface_model(output_filepath, position_transform_filepath, output_filepath, "CORTEX_RIGHT")
@@ -790,14 +790,14 @@ def create_volume_ellipsoid(length, width, position_transform_filepath, referenc
     gii = GiftiImage(darrays=[coord_array, face_array])
     
     # Save the GIFTI image
-    nib.save(gii, output_path + "/ellipsoid.gii")
+    nib.save(gii, output_path + os.sep +"ellipsoid.gii")
     
     # tranform .gii to .surf.gii file
     os.system(_FREESURFER_PATH + os.sep + "mris_convert " +
-              output_path + "/ellipsoid.gii" + " " + 
+              output_path + os.sep +"ellipsoid.gii" + " " + 
               output_filepath)
     
-    os.remove(output_path + "/ellipsoid.gii")
+    os.remove(output_path + os.sep +"ellipsoid.gii")
     
     # apply transform to focus (.surf.gii file) and set structure
     transform_surface_model(output_filepath, position_transform_filepath, output_filepath, "CORTEX_RIGHT")
@@ -858,14 +858,14 @@ def create_surface_transducer_model(radius, height, output_filepath):
     gii = GiftiImage(darrays=[coord_array, face_array])
     
     # Save the GIFTI image
-    nib.save(gii, output_path + "/transducer.gii")
+    nib.save(gii, output_path + os.sep +"transducer.gii")
     
     # tranform .gii to .surf.gii file
     os.system(_FREESURFER_PATH + os.sep + "mris_convert " +
-              output_path + "/transducer.gii" + " " + 
+              output_path + os.sep +"transducer.gii" + " " + 
               output_filepath)
     
-    os.remove(output_path + "/transducer.gii")
+    os.remove(output_path + os.sep +"transducer.gii")
 
 
 
@@ -901,8 +901,8 @@ def kPlan_results_to_nifti(h5_filepath, CT_filepath):
     
     for i in np.arange(len(sonications)):
         
-        sonication_simulated_field_pressure_amplitude = results["sonications/" + str(i+1) + "/simulated_field/pressure_amplitude"][:]
-        sonication_simulated_field_thermal_dose = results["sonications/" + str(i+1) + "/simulated_field/thermal_dose"][:]
+        sonication_simulated_field_pressure_amplitude = results["sonications/" + str(i+1) + os.sep +"simulated_field/pressure_amplitude"][:]
+        sonication_simulated_field_thermal_dose = results["sonications/" + str(i+1) + os.sep +"simulated_field/thermal_dose"][:]
         
         # transform extracted values into 3D maps
         def get_affine(diagonal_element):
@@ -983,7 +983,8 @@ def prepare_acoustic_simulation(vertex_number,
                                 flhm_list,
                                 placement_scene_template_filepath,
                                 ID="",
-                                skip_wb_view=False):
+                                skip_wb_view=False,
+                                use_internal_viewer=False):
     
     
     import os
@@ -1010,12 +1011,12 @@ def prepare_acoustic_simulation(vertex_number,
     #
     #=============================================================================
 
-    skin_coordinates, skin_normals = compute_surface_metrics(output_path + "/skin.surf.gii")
+    skin_coordinates, skin_normals = compute_surface_metrics(output_path + os.sep +"skin.surf.gii")
 
     target_center = roi_center_of_gravity(target_roi_filepath)
-    skin_target_vectors = vectors_between_surface_and_point(output_path + "/skin.surf.gii", target_center)
+    skin_target_vectors = vectors_between_surface_and_point(output_path + os.sep +"skin.surf.gii", target_center)
 
-    skin_target_intersections = compute_vector_mesh_intersections(skin_coordinates, skin_normals, output_path + "/" + target_roi_name + "_3Dmodel.stl", 200)
+    skin_target_intersections = compute_vector_mesh_intersections(skin_coordinates, skin_normals, output_path + os.sep + target_roi_name + "_3Dmodel.stl", 200)
     skin_target_intersection_values = []
     for i in np.arange(len(skin_target_intersections)):
         if len(skin_target_intersections[i]) == 1:
@@ -1057,14 +1058,14 @@ def prepare_acoustic_simulation(vertex_number,
     position_matrix_Localite = create_Localite_position_matrix(transducer_center_coordinates, vertex_vector)
     
     # Save
-    scipy.io.savemat(output_path_vtx + "/position_matrix_" + target_roi_name + "_" + suffix + "_Localite.mat", {'position_matrix': position_matrix_Localite})
-    np.savetxt(output_path_vtx + "/position_matrix_" + target_roi_name + "_" + suffix + "_Localite.txt", position_matrix_Localite)
+    scipy.io.savemat(output_path_vtx + os.sep +"position_matrix_" + target_roi_name + "_" + suffix + "_Localite.mat", {'position_matrix': position_matrix_Localite})
+    np.savetxt(output_path_vtx + os.sep +"position_matrix_" + target_roi_name + "_" + suffix + "_Localite.txt", position_matrix_Localite)
     
     # Create "fake" XML structure with matrix values
     xml = create_fake_XML_structure_for_Localite(position_matrix_Localite, "transducer_position_" + target_roi_name + suffix, 0, 0)
 
     # Save/append "fake" XML structure in text file
-    with open(output_path_vtx + "/position_matrix_" + target_roi_name + "_" + suffix + "_Localite_XML.txt", "a") as f:
+    with open(output_path_vtx + os.sep +"position_matrix_" + target_roi_name + "_" + suffix + "_Localite_XML.txt", "a") as f:
         f.write(xml)
     
 #==============================================================================
@@ -1074,22 +1075,22 @@ def prepare_acoustic_simulation(vertex_number,
     position_matrix_kPlan = convert_Localite_to_kPlan_position_matrix(position_matrix_Localite)
     
     # Save
-    scipy.io.savemat(output_path_vtx + "/position_matrix_" + target_roi_name + "_" + suffix + "_kPlan.mat", {'position_matrix': position_matrix_kPlan})
-    np.savetxt(output_path_vtx + "/position_matrix_" + target_roi_name + "_" + suffix + "_kPlan.txt", position_matrix_kPlan)
+    scipy.io.savemat(output_path_vtx + os.sep +"position_matrix_" + target_roi_name + "_" + suffix + "_kPlan.mat", {'position_matrix': position_matrix_kPlan})
+    np.savetxt(output_path_vtx + os.sep +"position_matrix_" + target_roi_name + "_" + suffix + "_kPlan.txt", position_matrix_kPlan)
 
 
 #==============================================================================
 # Optional: Transform transducer file
 #==============================================================================
 
-    transform = np.loadtxt(output_path_vtx + "/position_matrix_" + target_roi_name + "_" + suffix + "_kPlan.txt")
+    transform = np.loadtxt(output_path_vtx + os.sep +"position_matrix_" + target_roi_name + "_" + suffix + "_kPlan.txt")
     transform[0:3,3] = transform[0:3,3]*1000
     
-    transform_filepath = output_path_vtx + "/position_matrix_" + target_roi_name + "_" + suffix + "_transducer.txt"
+    transform_filepath = output_path_vtx + os.sep +"position_matrix_" + target_roi_name + "_" + suffix + "_transducer.txt"
     np.savetxt(transform_filepath, transform)
     
-    output_filepath = output_path_vtx + "/transducer_" + target_roi_name + "_" + suffix + ".surf.gii"
-    output_filepath_stl = output_path_vtx + "/transducer_" + target_roi_name + "_" + suffix + ".surf.stl"
+    output_filepath = output_path_vtx + os.sep +"transducer_" + target_roi_name + "_" + suffix + ".surf.gii"
+    output_filepath_stl = output_path_vtx + os.sep +"transducer_" + target_roi_name + "_" + suffix + ".surf.stl"
 
 
     if not transducer_surface_model_filepath == "":
@@ -1107,7 +1108,7 @@ def prepare_acoustic_simulation(vertex_number,
 # Create transducer positon (.kps) file for k-Plan
 #==============================================================================
 
-    position_matrix_kPlan_filepath  = output_path_vtx + "/position_matrix_" + target_roi_name + "_" + suffix + "_kPlan.mat"
+    position_matrix_kPlan_filepath  = output_path_vtx + os.sep +"position_matrix_" + target_roi_name + "_" + suffix + "_kPlan.mat"
     kps_filename = target_roi_name + suffix
     
     create_kps_file_for_kPlan(position_matrix_kPlan_filepath, kps_filename)
@@ -1121,7 +1122,7 @@ def prepare_acoustic_simulation(vertex_number,
     # (intersection), i.e. required focal distance
     if skin_target_intersection_values[vertex_number] == 0:
         target_center = roi_center_of_gravity(target_roi_filepath)
-        skin_target_distances = distance_between_surface_and_point(output_path + "/skin.surf.gii", target_center)
+        skin_target_distances = distance_between_surface_and_point(output_path + os.sep +"skin.surf.gii", target_center)
         focal_distance = skin_target_distances[vertex_number] + additional_offset
     else:
         skin_target_intersection_center = (np.asarray(skin_target_intersections[vertex_number][0]) + np.asarray(skin_target_intersections[vertex_number][1]))/2
@@ -1141,14 +1142,14 @@ def prepare_acoustic_simulation(vertex_number,
 #==============================================================================
 
     # create and save transform for focus
-    focus_position_transform = np.loadtxt(output_path_vtx + "/position_matrix_" + target_roi_name + "_" + suffix + "_kPlan.txt")
+    focus_position_transform = np.loadtxt(output_path_vtx + os.sep +"position_matrix_" + target_roi_name + "_" + suffix + "_kPlan.txt")
     focus_position_transform[0:3,3] = focus_position_transform[0:3,3] * 1000
     focus_position_transform[0:3,3] = focus_position_transform[0:3,3] + (vertex_vector * (offset + focal_distance))
         
-    focus_position_transform_filepath = output_path_vtx + "/focus_position_matrix_" + target_roi_name + "_" + suffix + ".txt"        
+    focus_position_transform_filepath = output_path_vtx + os.sep +"focus_position_matrix_" + target_roi_name + "_" + suffix + ".txt"        
     np.savetxt(focus_position_transform_filepath, focus_position_transform)
     
-    ellipsoid_output_filepath = output_path_vtx + "/focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".surf.gii"
+    ellipsoid_output_filepath = output_path_vtx + os.sep +"focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".surf.gii"
 
     create_surface_ellipsoid(FLHM, 5,
                                      focus_position_transform_filepath,
@@ -1160,11 +1161,11 @@ def prepare_acoustic_simulation(vertex_number,
 # Create ellipsoid (volume)
 #==============================================================================
 
-    ellipsoid_volume_output_filepath = output_path_vtx + "/focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".nii.gz"
+    ellipsoid_volume_output_filepath = output_path_vtx + os.sep +"focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".nii.gz"
 
 
     # create surface ellipsoid with smaller dimensions
-    ellipsoid_small_output_filepath = output_path_vtx + "/focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + "_small.surf.gii"
+    ellipsoid_small_output_filepath = output_path_vtx + os.sep +"focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + "_small.surf.gii"
 
     create_surface_ellipsoid(FLHM-1, 5-1,
                              focus_position_transform_filepath,
@@ -1175,11 +1176,11 @@ def prepare_acoustic_simulation(vertex_number,
     # create metric from surface
     os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-coordinates-to-metric {} {}".format(
         ellipsoid_output_filepath,
-        output_path_vtx + "/focus.func.gii"))
+        output_path_vtx + os.sep +"focus.func.gii"))
 
     # map metric to volume
     os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-to-volume-mapping {} {} {} {} -ribbon-constrained {} {}".format(
-        output_path_vtx + "/focus.func.gii",
+        output_path_vtx + os.sep +"focus.func.gii",
         ellipsoid_output_filepath,
         t1_filepath,
         ellipsoid_volume_output_filepath,
@@ -1200,7 +1201,7 @@ def prepare_acoustic_simulation(vertex_number,
     ellipsoid_nii_image.to_filename(ellipsoid_volume_output_filepath)
 
     # remove intermediate files
-    os.remove(output_path_vtx + "/focus.func.gii")
+    os.remove(output_path_vtx + os.sep +"focus.func.gii")
     os.remove(ellipsoid_small_output_filepath)
 
 
@@ -1209,36 +1210,54 @@ def prepare_acoustic_simulation(vertex_number,
 #==============================================================================
     if skip_wb_view:
         return
-    scene_variable_names = [
-        'SKIN_SURFACE_FILENAME',
-        'SKIN_SURFACE_FILEPATH',
-        'T1_FILENAME',
-        'T1_FILEPATH',
-        'MASK_FILENAME',
-        'MASK_FILEPATH',
-        'TRANSDUCER_SURFACE_FILENAME',
-        'TRANSDUCER_SURFACE_FILEPATH',
-        'FOCUS_VOLUME_FILENAME',
-        'FOCUS_VOLUME_FILEPATH',
-        'FOCUS_SURFACE_FILENAME',
-        'FOCUS_SURFACE_FILEPATH'
-        ]
+    if use_internal_viewer:
+        from Viewer import FinalResultViewer
+        from PyQt5.QtWidgets import QDialog,QVBoxLayout
+        DlgResults=QDialog()
+        DlgResults.setWindowTitle("Trajectory Results")
 
-    scene_variable_values = [
-        'skin.surf.gii',
-        '../skin.surf.gii',
-        'T1.nii.gz',
-        '../../../T1.nii.gz',
-        target_roi_filename,
-        '../' + target_roi_filename,
-        "transducer_" + target_roi_name + "_" + suffix + ".surf.gii",
-        "./transducer_" + target_roi_name + "_" + suffix + ".surf.gii",
-        "focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".nii.gz",
-        "./focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".nii.gz",
-        "focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".surf.gii",
-        "./focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".surf.gii"]
+        layout = QVBoxLayout()
+        DlgResults.setLayout(layout)
+
+        gifti_files = []
+        gifti_files.append(output_path+os.sep+'skin.surf.gii')
+        gifti_files.append(output_filepath)
+        
+        widget = FinalResultViewer(gifti_files)
+        layout.addWidget(widget)
+        DlgResults.resize(600, 600)
+        DlgResults.exec()
+    else:
+        scene_variable_names = [
+            'SKIN_SURFACE_FILENAME',
+            'SKIN_SURFACE_FILEPATH',
+            'T1_FILENAME',
+            'T1_FILEPATH',
+            'MASK_FILENAME',
+            'MASK_FILEPATH',
+            'TRANSDUCER_SURFACE_FILENAME',
+            'TRANSDUCER_SURFACE_FILEPATH',
+            'FOCUS_VOLUME_FILENAME',
+            'FOCUS_VOLUME_FILEPATH',
+            'FOCUS_SURFACE_FILENAME',
+            'FOCUS_SURFACE_FILEPATH'
+            ]
+
+        scene_variable_values = [
+            'skin.surf.gii',
+            '../skin.surf.gii',
+            'T1.nii.gz',
+            '../../../T1.nii.gz',
+            target_roi_filename,
+            '../' + target_roi_filename,
+            "transducer_" + target_roi_name + "_" + suffix + ".surf.gii",
+            "./transducer_" + target_roi_name + "_" + suffix + ".surf.gii",
+            "focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".nii.gz",
+            "./focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".nii.gz",
+            "focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".surf.gii",
+            "./focus_" + target_roi_name + "_" + suffix + "_" + str(round(focal_distance,1)) + ".surf.gii"]
 
 
-    create_scene(placement_scene_template_filepath, output_path_vtx + "/scene.scene", scene_variable_names, scene_variable_values)
+        create_scene(placement_scene_template_filepath, output_path_vtx + os.sep +"scene.scene", scene_variable_names, scene_variable_values)
 
-    os.system(_CONNECTOME_PATH + os.sep + "wb_view -logging OFF " + output_path_vtx + "/scene.scene")
+        os.system(_CONNECTOME_PATH + os.sep + "wb_view -logging OFF " + output_path_vtx + os.sep +"scene.scene")

@@ -42,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("roi", type=str, help="Path to target ROI")
     parser.add_argument("txconfig", type=str, help="Path to transducer configuration")
     parser.add_argument( "--skip_wb_view",action="store_true",help="Run calculations but skip wb_view")
+    parser.add_argument( "--use_internal_viewer",action="store_true",help="Use own viewer instead of wb_view")
     parser.add_argument( "--do_only_trajectory",type=int,default=-1,help="Optional integer to run only the generation of trajectory (default: -1). Specify number of triangles to generate."
 )
     
@@ -88,6 +89,8 @@ if __name__ == "__main__":
 
     IDTarget = txconfig.get("IDTarget", "")
 
+    bUseGenericTransducerModel = txconfig.get("bUseGenericTransducerModel", False)
+
 
     #==============================================================================
     # PlanTUS paths
@@ -98,14 +101,17 @@ if __name__ == "__main__":
     plantus_main_folder = str(resource_path())
     # Paths to ...
     # planning scene template
-    planning_scene_template_filepath = plantus_main_folder + '/resources/scene_templates/TUSTransducerPlacementPlanning_TEMPLATE.scene'
+    planning_scene_template_filepath = plantus_main_folder + '/resources/scene_templates/TUSTransducerPlacementPlanning_TEMPLATE.scene'.replace('/',os.sep)
     # placement scene template
-    placement_scene_template_filepath = plantus_main_folder + '/resources/scene_templates/TUSTransducerPlacement_TEMPLATE.scene'
+    placement_scene_template_filepath = plantus_main_folder + '/resources/scene_templates/TUSTransducerPlacement_TEMPLATE.scene'.replace('/',os.sep)
     # transducer model (leave empty to generate generic model)
-    transducer_surface_model_filepath = plantus_main_folder + '/resources/transducer_models/TRANSDUCER-NEUROFUS-CTX-500-4_DEVICE.surf.gii'
-    #transducer_surface_model_filepath = ""
+    if bUseGenericTransducerModel:
+        transducer_surface_model_filepath = ""
+    else:
+        transducer_surface_model_filepath = plantus_main_folder + '/resources/transducer_models/TRANSDUCER-NEUROFUS-CTX-500-4_DEVICE.surf.gii'.replace('/',os.sep)
+  
     # PlanTUS code
-    plantus_code_path =  plantus_main_folder + '/code'
+    plantus_code_path =  plantus_main_folder + os.sep + 'code'
     
 
 
@@ -142,11 +148,11 @@ if __name__ == "__main__":
     target_roi_name = target_roi_name.replace(".gz", "")
 
     output_path = os.path.split(simnibs_mesh_filepath)[0]
-    output_path = output_path + "/PlanTUS/" + target_roi_name
+    output_path = output_path + os.sep + 'PlanTUS' + os.sep + target_roi_name
     os.makedirs(output_path, exist_ok=True)
 
-    shutil.copy(target_roi_filepath, output_path + "/")
-    target_roi_filepath = output_path + "/" + target_roi_filename
+    shutil.copy(target_roi_filepath, output_path + os.sep)
+    target_roi_filepath = output_path + os.sep + target_roi_filename
 
 
     if args.do_only_trajectory<0:
@@ -157,19 +163,19 @@ if __name__ == "__main__":
         # Skin
         PlanTUS.convert_simnibs_mesh_to_surface(simnibs_mesh_filepath, [1005], "skin", output_path)
 
-        PlanTUS.add_structure_information(output_path + "/skin.surf.gii", "CORTEX_LEFT")
+        PlanTUS.add_structure_information(output_path +os.sep + "skin.surf.gii", "CORTEX_LEFT")
 
         # Skull
         PlanTUS.convert_simnibs_mesh_to_surface(simnibs_mesh_filepath, [1007, 1008], "skull", output_path)
 
-        PlanTUS.add_structure_information(output_path + "/skull.surf.gii", "CORTEX_RIGHT")
+        PlanTUS.add_structure_information(output_path +os.sep + "skull.surf.gii", "CORTEX_RIGHT")
 
 
         #==============================================================================
         #
         #==============================================================================
 
-        PlanTUS.create_avoidance_mask(simnibs_mesh_filepath, output_path + "/skin.surf.gii", transducer_diameter/2)
+        PlanTUS.create_avoidance_mask(simnibs_mesh_filepath, output_path +os.sep + "skin.surf.gii", transducer_diameter/2)
 
 
         #==============================================================================
@@ -178,34 +184,34 @@ if __name__ == "__main__":
 
         # distances between skin and (center of) target
         target_center = PlanTUS.roi_center_of_gravity(target_roi_filepath)
-        skin_target_distances = PlanTUS.distance_between_surface_and_point(output_path + "/skin.surf.gii", target_center)
-        PlanTUS.create_metric_from_pseudo_nifti("distances", skin_target_distances, output_path + "/skin.surf.gii")
-        PlanTUS.mask_metric(output_path + "/distances_skin.func.gii", output_path + "/avoidance_skin.func.gii")
-        PlanTUS.add_structure_information(output_path + "/distances_skin.func.gii", "CORTEX_LEFT")
-        PlanTUS.threshold_metric(output_path + "/distances_skin.func.gii", max_distance)
-        PlanTUS.mask_metric(output_path + "/distances_skin_thresholded.func.gii", output_path + "/avoidance_skin.func.gii")
-        PlanTUS.add_structure_information(output_path + "/distances_skin_thresholded.func.gii", "CORTEX_LEFT")
+        skin_target_distances = PlanTUS.distance_between_surface_and_point(output_path +os.sep + "skin.surf.gii", target_center)
+        PlanTUS.create_metric_from_pseudo_nifti("distances", skin_target_distances, output_path +os.sep + "skin.surf.gii")
+        PlanTUS.mask_metric(output_path +os.sep + "distances_skin.func.gii", output_path +os.sep + "avoidance_skin.func.gii")
+        PlanTUS.add_structure_information(output_path +os.sep + "distances_skin.func.gii", "CORTEX_LEFT")
+        PlanTUS.threshold_metric(output_path +os.sep + "distances_skin.func.gii", max_distance)
+        PlanTUS.mask_metric(output_path +os.sep + "distances_skin_thresholded.func.gii", output_path +os.sep + "avoidance_skin.func.gii")
+        PlanTUS.add_structure_information(output_path +os.sep + "distances_skin_thresholded.func.gii", "CORTEX_LEFT")
 
 
         # angles between skin normal vectors and skin-target vectors
         skin_target_angles = []
-        _, skin_normals = PlanTUS.compute_surface_metrics(output_path + "/skin.surf.gii")
-        skin_target_vectors = PlanTUS.vectors_between_surface_and_point(output_path + "/skin.surf.gii", target_center)
+        _, skin_normals = PlanTUS.compute_surface_metrics(output_path +os.sep + "skin.surf.gii")
+        skin_target_vectors = PlanTUS.vectors_between_surface_and_point(output_path +os.sep + "skin.surf.gii", target_center)
         for i in np.arange(len(skin_target_vectors)):
             skin_target_angles.append((math.degrees(PlanTUS.angle_between_vectors(skin_target_vectors[i], skin_normals[i]))))
         skin_target_angles = np.abs(np.asarray(skin_target_angles))
-        PlanTUS.create_metric_from_pseudo_nifti("angles", skin_target_angles, output_path + "/skin.surf.gii")
-        PlanTUS.mask_metric(output_path + "/angles_skin.func.gii", output_path + "/avoidance_skin.func.gii")
-        PlanTUS.add_structure_information(output_path + "/angles_skin.func.gii", "CORTEX_LEFT")
-        #PlanTUS.smooth_metric(output_path + "/angles_skin.func.gii", output_path + "/skin.surf.gii", transducer_diameter)
-        #PlanTUS.mask_metric(output_path + "/angles_skin_s" + str(transducer_diameter) + ".func.gii", output_path + "/avoidance_skin.func.gii")
-        #PlanTUS.add_structure_information(output_path + "/angles_skin_s" + str(transducer_diameter) + ".func.gii", "CORTEX_LEFT")
+        PlanTUS.create_metric_from_pseudo_nifti("angles", skin_target_angles, output_path +os.sep + "skin.surf.gii")
+        PlanTUS.mask_metric(output_path +os.sep + "angles_skin.func.gii", output_path +os.sep + "avoidance_skin.func.gii")
+        PlanTUS.add_structure_information(output_path +os.sep + "angles_skin.func.gii", "CORTEX_LEFT")
+        #PlanTUS.smooth_metric(output_path +os.sep + "angles_skin.func.gii", output_path +os.sep + "skin.surf.gii", transducer_diameter)
+        #PlanTUS.mask_metric(output_path +os.sep + "angles_skin_s" + str(transducer_diameter) + ".func.gii", output_path +os.sep + "avoidance_skin.func.gii")
+        #PlanTUS.add_structure_information(output_path +os.sep + "angles_skin_s" + str(transducer_diameter) + ".func.gii", "CORTEX_LEFT")
 
 
         # intersection between skin normal vectors and target region
         PlanTUS.stl_from_nii(target_roi_filepath, 0.25)
-        skin_coordinates, skin_normals = PlanTUS.compute_surface_metrics(output_path + "/skin.surf.gii")
-        skin_target_intersections = PlanTUS.compute_vector_mesh_intersections(skin_coordinates, skin_normals, output_path + "/" + target_roi_name + "_3Dmodel.stl", 200)
+        skin_coordinates, skin_normals = PlanTUS.compute_surface_metrics(output_path +os.sep + "skin.surf.gii")
+        skin_target_intersections = PlanTUS.compute_vector_mesh_intersections(skin_coordinates, skin_normals, output_path + os.sep + target_roi_name + "_3Dmodel.stl", 200)
 
         skin_target_intersection_values = []
         for i in np.arange(len(skin_target_intersections)):
@@ -226,18 +232,18 @@ if __name__ == "__main__":
                 skin_target_intersection_values.append(0)
         skin_target_intersection_values = np.asarray(skin_target_intersection_values)
 
-        PlanTUS.create_metric_from_pseudo_nifti("target_intersection", skin_target_intersection_values, output_path + "/skin.surf.gii")
-        PlanTUS.mask_metric(output_path + "/target_intersection_skin.func.gii", output_path + "/avoidance_skin.func.gii")
-        PlanTUS.add_structure_information(output_path + "/target_intersection_skin.func.gii", "CORTEX_LEFT")
-        #PlanTUS.smooth_metric(output_path + "/target_intersection_skin.func.gii", output_path + "/skin.surf.gii", transducer_diameter)
-        #PlanTUS.mask_metric(output_path + "/target_intersection_skin_s" + str(transducer_diameter) + ".func.gii", output_path + "/avoidance_skin.func.gii")
-        #PlanTUS.add_structure_information(output_path + "/target_intersection_skin_s" + str(transducer_diameter) + ".func.gii", "CORTEX_LEFT")
+        PlanTUS.create_metric_from_pseudo_nifti("target_intersection", skin_target_intersection_values, output_path +os.sep + "skin.surf.gii")
+        PlanTUS.mask_metric(output_path +os.sep + "target_intersection_skin.func.gii", output_path +os.sep + "avoidance_skin.func.gii")
+        PlanTUS.add_structure_information(output_path +os.sep + "target_intersection_skin.func.gii", "CORTEX_LEFT")
+        #PlanTUS.smooth_metric(output_path +os.sep + "target_intersection_skin.func.gii", output_path +os.sep + "skin.surf.gii", transducer_diameter)
+        #PlanTUS.mask_metric(output_path +os.sep + "target_intersection_skin_s" + str(transducer_diameter) + ".func.gii", output_path +os.sep + "avoidance_skin.func.gii")
+        #PlanTUS.add_structure_information(output_path +os.sep + "target_intersection_skin_s" + str(transducer_diameter) + ".func.gii", "CORTEX_LEFT")
 
 
         # angles between skin and skull normals
-        skin_coordinates, skin_normals = PlanTUS.compute_surface_metrics(output_path + "/skin.surf.gii")
-        skull_coordinates, skull_normals = PlanTUS.compute_surface_metrics(output_path + "/skull.surf.gii")
-        skin_skull_intersections = PlanTUS.compute_vector_mesh_intersections(skin_coordinates, skin_normals, output_path + "/skull.stl", 40)
+        skin_coordinates, skin_normals = PlanTUS.compute_surface_metrics(output_path +os.sep + "skin.surf.gii")
+        skull_coordinates, skull_normals = PlanTUS.compute_surface_metrics(output_path +os.sep + "skull.surf.gii")
+        skin_skull_intersections = PlanTUS.compute_vector_mesh_intersections(skin_coordinates, skin_normals, output_path +os.sep + "skull.stl", 40)
 
         indices_closest_skull_vertices = []
         for i in np.arange(len(skin_coordinates)):
@@ -260,132 +266,182 @@ if __name__ == "__main__":
                 skin_skull_angle_list.append(0)
         skin_skull_angles = np.asarray(skin_skull_angle_list)
 
-        PlanTUS.create_metric_from_pseudo_nifti("skin_skull_angles", skin_skull_angles, output_path + "/skin.surf.gii")
-        PlanTUS.mask_metric(output_path + "/skin_skull_angles_skin.func.gii", output_path + "/avoidance_skin.func.gii")
-        PlanTUS.add_structure_information(output_path + "/skin_skull_angles_skin.func.gii", "CORTEX_LEFT")
-        #PlanTUS.smooth_metric(output_path + "/skin_skull_angles_skin.func.gii", output_path + "/skin.surf.gii", transducer_diameter)
-        #PlanTUS.mask_metric(output_path + "/skin_skull_angles_skin_s" + str(transducer_diameter) + ".func.gii", output_path + "/avoidance_skin.func.gii")
-        #PlanTUS.add_structure_information(output_path + "/skin_skull_angles_skin_s" + str(transducer_diameter) + ".func.gii", "CORTEX_LEFT")
+        PlanTUS.create_metric_from_pseudo_nifti("skin_skull_angles", skin_skull_angles, output_path +os.sep + "skin.surf.gii")
+        PlanTUS.mask_metric(output_path +os.sep + "skin_skull_angles_skin.func.gii", output_path +os.sep + "avoidance_skin.func.gii")
+        PlanTUS.add_structure_information(output_path +os.sep + "skin_skull_angles_skin.func.gii", "CORTEX_LEFT")
+        #PlanTUS.smooth_metric(output_path +os.sep + "skin_skull_angles_skin.func.gii", output_path +os.sep + "skin.surf.gii", transducer_diameter)
+        #PlanTUS.mask_metric(output_path +os.sep + "skin_skull_angles_skin_s" + str(transducer_diameter) + ".func.gii", output_path +os.sep + "avoidance_skin.func.gii")
+        #PlanTUS.add_structure_information(output_path +os.sep + "skin_skull_angles_skin_s" + str(transducer_diameter) + ".func.gii", "CORTEX_LEFT")
 
         if args.skip_wb_view:
             sys.exit(0)  #skip wb_view part if requested
-       
-        scene_variable_names = [
-            'SKIN_SURFACE_FILENAME',
-            'SKIN_SURFACE_FILEPATH',
-            'SKULL_SURFACE_FILENAME',
-            'SKULL_SURFACE_FILEPATH',
-            'DISTANCES_FILENAME',
-            'DISTANCES_FILEPATH',
-            'INTERSECTION_FILENAME',
-            'INTERSECTION_FILEPATH',
-            'ANGLES_FILENAME',
-            'ANGLES_FILEPATH',
-            'ANGLES_SKIN_SKULL_FILENAME',
-            'ANGLES_SKIN_SKULL_FILEPATH',
-            'DISTANCES_MAX_FILENAME',
-            'DISTANCES_MAX_FILEPATH',
-            'T1_FILENAME',
-            'T1_FILEPATH',
-            'MASK_FILENAME',
-            'MASK_FILEPATH']
 
-        scene_variable_values = [
-            'skin.surf.gii',
-            './skin.surf.gii',
-            'skull.surf.gii',
-            './skull.surf.gii',
-            'distances_skin.func.gii',
-            './distances_skin.func.gii',
-            'target_intersection_skin.func.gii',
-            './target_intersection_skin.func.gii',
-            'angles_skin.func.gii',
-            './angles_skin.func.gii',
-            'skin_skull_angles_skin.func.gii',
-            './skin_skull_angles_skin.func.gii',
-            'distances_skin_thresholded.func.gii',
-            './distances_skin_thresholded.func.gii',
-            'T1.nii.gz',
-            '../../T1.nii.gz',
-            target_roi_filename,
-            './' + target_roi_filename]
+        if args.use_internal_viewer:
+            from PyQt5.QtWidgets import QApplication,QDialog,QVBoxLayout
+            from Viewer import PrepareShowResults
+
+            app = QApplication(sys.argv)
+
+            DlgResults=QDialog()
+            DlgResults.setWindowTitle("PlanTUS Results")
+
+            layout = QVBoxLayout()
+            DlgResults.setLayout(layout)
+            DlgResults.resize(1700, 700)
+
+            def CallBackGenerateTrajectory(selection):
+                DlgResults.accept()
+
+            WidgetViewer = PrepareShowResults(output_path +os.sep + "skin.surf.gii",
+                                              output_path +os.sep + "distances_skin.func.gii",
+                                              output_path +os.sep + "distances_skin_thresholded.func.gii",
+                                              output_path +os.sep + "target_intersection_skin.func.gii",
+                                              output_path +os.sep + "angles_skin.func.gii",
+                                              output_path +os.sep + "skin_skull_angles_skin.func.gii",
+                                              CallBackGenerateTrajectory=CallBackGenerateTrajectory)
+            
+            WidgetViewer.resize(1700, 700)
+            layout.addWidget(WidgetViewer)
+
+            if not DlgResults.exec():
+                sys.exit(0) #we stop here
+            print('Generating trajectory for ID', WidgetViewer.select_vortex)
+            PlanTUS.prepare_acoustic_simulation(WidgetViewer.select_vortex,
+                                                                    output_path,
+                                                                    target_roi_filepath,
+                                                                    t1_filepath,
+                                                                    max_distance,
+                                                                    min_distance,
+                                                                    transducer_diameter,
+                                                                    max_angle,
+                                                                    plane_offset,
+                                                                    additional_offset,
+                                                                    transducer_surface_model_filepath,
+                                                                    focal_distance_list,
+                                                                    flhm_list,
+                                                                    placement_scene_template_filepath,
+                                                                    ID=IDTarget,
+                                                                    use_internal_viewer=args.use_internal_viewer)
 
 
-        PlanTUS.create_scene(planning_scene_template_filepath, output_path + "/scene.scene", scene_variable_names, scene_variable_values)
 
-        # Define the command
-        command = "/Users/spichardo/workbench/macosxub_apps/wb_view.app/Contents/MacOS/wb_view -logging FINER " + output_path + "/scene.scene"
+        else: 
+            scene_variable_names = [
+                'SKIN_SURFACE_FILENAME',
+                'SKIN_SURFACE_FILEPATH',
+                'SKULL_SURFACE_FILENAME',
+                'SKULL_SURFACE_FILEPATH',
+                'DISTANCES_FILENAME',
+                'DISTANCES_FILEPATH',
+                'INTERSECTION_FILENAME',
+                'INTERSECTION_FILEPATH',
+                'ANGLES_FILENAME',
+                'ANGLES_FILEPATH',
+                'ANGLES_SKIN_SKULL_FILENAME',
+                'ANGLES_SKIN_SKULL_FILEPATH',
+                'DISTANCES_MAX_FILENAME',
+                'DISTANCES_MAX_FILEPATH',
+                'T1_FILENAME',
+                'T1_FILEPATH',
+                'MASK_FILENAME',
+                'MASK_FILEPATH']
 
-        # Regular expression pattern to match the phrase and the number
-        pattern = re.compile(r"Switched vertex to triangle nearest vertex\s+(\.\d+)")
+            scene_variable_values = [
+                'skin.surf.gii',
+                './skin.surf.gii',
+                'skull.surf.gii',
+                './skull.surf.gii',
+                'distances_skin.func.gii',
+                './distances_skin.func.gii',
+                'target_intersection_skin.func.gii',
+                './target_intersection_skin.func.gii',
+                'angles_skin.func.gii',
+                './angles_skin.func.gii',
+                'skin_skull_angles_skin.func.gii',
+                './skin_skull_angles_skin.func.gii',
+                'distances_skin_thresholded.func.gii',
+                './distances_skin_thresholded.func.gii',
+                'T1.nii.gz',
+                '../../T1.nii.gz',
+                target_roi_filename,
+                './' + target_roi_filename]
 
-        # Initialize the variable to store the number and a flag to trigger processing
-        triangle_number = None
-        process_line = False
 
-        # Function to monitor mouse clicks
-        def on_click(x, y, button, pressed):
-            global process_line
-            if pressed:
-                process_line = True
+            PlanTUS.create_scene(planning_scene_template_filepath, output_path +os.sep + "scene.scene", scene_variable_names, scene_variable_values)
 
-        # Start listening for mouse clicks in a separate thread
-        listener = mouse.Listener(on_click=on_click)
-        listener.start()
+            # Define the command
+            command = "/Users/spichardo/workbench/macosxub_apps/wb_view.app/Contents/MacOS/wb_view -logging FINER " + output_path +os.sep + "scene.scene"
 
-        # Start the process to run the command
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=output_path, text=True)
+            # Regular expression pattern to match the phrase and the number
+            pattern = re.compile(r"Switched vertex to triangle nearest vertex\s+(\.\d+)")
 
-    # Function to read the process output
-        def read_output():
-            global triangle_number, process_line,IDTarget
+            # Initialize the variable to store the number and a flag to trigger processing
+            triangle_number = None
+            process_line = False
 
-            while True:
-                output = process.stderr.readline()
-                if output == '' and process.poll() is not None:
-                    break
+            # Function to monitor mouse clicks
+            def on_click(x, y, button, pressed):
+                global process_line
+                if pressed:
+                    process_line = True
 
-                if process_line:
-                    # Process the latest line only when a mouse click is detected
-                    match = pattern.search(output)
-                    if match:
-                        triangle_number = match.group(1)
-                        triangle_number = int(triangle_number.replace(".", ""))
-                        print(f"Switched vertex to triangle nearest vertex: {triangle_number}")
+            # Start listening for mouse clicks in a separate thread
+            listener = mouse.Listener(on_click=on_click)
+            listener.start()
 
-                        # Ask the user if they want to generate the transducer placement
-                        response = input(f"Generate transducer placement for vertex {triangle_number}? (yes/no): ").strip().lower()
-                        if response == "yes":
-                            print(f"Generating transducer placement for vertex {triangle_number}")
-                            PlanTUS.prepare_acoustic_simulation(triangle_number,
-                                                                output_path,
-                                                                target_roi_filepath,
-                                                                t1_filepath,
-                                                                max_distance,
-                                                                min_distance,
-                                                                transducer_diameter,
-                                                                max_angle,
-                                                                plane_offset,
-                                                                additional_offset,
-                                                                transducer_surface_model_filepath,
-                                                                focal_distance_list,
-                                                                flhm_list,
-                                                                placement_scene_template_filepath,
-                                                                ID=IDTarget) #if IDTarget is empty, the vortex number will be used
-                        else:
-                            print("No action taken.")
+            # Start the process to run the command
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, cwd=output_path, text=True)
 
-                        # Reset the flag
-                        process_line = False
+        # Function to read the process output
+            def read_output():
+                global triangle_number, process_line,IDTarget
 
-        # Start the output reading in a separate thread
-        output_thread = threading.Thread(target=read_output)
-        output_thread.start()
+                while True:
+                    output = process.stderr.readline()
+                    if output == '' and process.poll() is not None:
+                        break
 
-        # Wait for the process and threads to finish
-        process.wait()
-        output_thread.join()
-        listener.stop()
+                    if process_line:
+                        # Process the latest line only when a mouse click is detected
+                        match = pattern.search(output)
+                        if match:
+                            triangle_number = match.group(1)
+                            triangle_number = int(triangle_number.replace(".", ""))
+                            print(f"Switched vertex to triangle nearest vertex: {triangle_number}")
+
+                            # Ask the user if they want to generate the transducer placement
+                            response = input(f"Generate transducer placement for vertex {triangle_number}? (yes/no): ").strip().lower()
+                            if response == "yes":
+                                print(f"Generating transducer placement for vertex {triangle_number}")
+                                PlanTUS.prepare_acoustic_simulation(triangle_number,
+                                                                    output_path,
+                                                                    target_roi_filepath,
+                                                                    t1_filepath,
+                                                                    max_distance,
+                                                                    min_distance,
+                                                                    transducer_diameter,
+                                                                    max_angle,
+                                                                    plane_offset,
+                                                                    additional_offset,
+                                                                    transducer_surface_model_filepath,
+                                                                    focal_distance_list,
+                                                                    flhm_list,
+                                                                    placement_scene_template_filepath,
+                                                                    ID=IDTarget) #if IDTarget is empty, the vortex number will be used
+                            else:
+                                print("No action taken.")
+
+                            # Reset the flag
+                            process_line = False
+
+            # Start the output reading in a separate thread
+            output_thread = threading.Thread(target=read_output)
+            output_thread.start()
+
+            # Wait for the process and threads to finish
+            process.wait()
+            output_thread.join()
+            listener.stop()
     else:
         # If only trajectory is to be done, call the appropriate function
         PlanTUS.prepare_acoustic_simulation(args.do_only_trajectory,
