@@ -72,11 +72,11 @@ def convert_simnibs_mesh_to_surface(simnibs_mesh_filepath, tags, mesh_name, outp
     mesh_io.write_freesurfer_surface(simnibs_mesh,
                                      output_path + os.sep + mesh_name + "_freesurfer")
 
-    os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}".format(
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert '{}' '{}'".format(
         output_path + os.sep + mesh_name + "_freesurfer",
         output_path + os.sep + mesh_name + ".stl"))
     
-    os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}".format(
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert '{}' '{}'".format(
         output_path + os.sep + mesh_name + "_freesurfer",
         output_path + os.sep + mesh_name + ".surf.gii"))
     
@@ -94,7 +94,7 @@ def compute_surface_metrics(surface_filepath):
     surface_filename = os.path.split(surface_filepath)[1]
     surface_name = surface_filename.replace(".surf.gii", "")
     
-    os.system(_CONNECTOME_PATH + os.sep + 'wb_command -logging OFF -surface-coordinates-to-metric {} {}'.format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-coordinates-to-metric '{}' '{}'".format(
         surface_filepath,
         output_path + os.sep + surface_name + "_coordinates.func.gii"))
     
@@ -102,7 +102,7 @@ def compute_surface_metrics(surface_filepath):
     surface_coordinates = np.asfarray(surface_coordinates)
     
 
-    os.system(_CONNECTOME_PATH + os.sep + 'wb_command -logging OFF -surface-normals {} {}'.format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-normals '{}' '{}'".format(
         surface_filepath,
         output_path + os.sep + surface_name + "_normals.func.gii"))
         
@@ -125,15 +125,15 @@ def create_pseudo_metric_nifti_from_surface(surface_filepath):
     surface_filename = os.path.split(surface_filepath)[1]
     surface_name = surface_filename.replace(".surf.gii", "")
     
-    os.system(_CONNECTOME_PATH + os.sep + 'wb_command -logging OFF -surface-coordinates-to-metric {} {}'.format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-coordinates-to-metric '{}' '{}'".format(
         surface_filepath,
         output_path + os.sep + surface_name + "_coordinates.func.gii"))
     
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-reduce {} MEAN {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-reduce '{}' MEAN '{}'".format(
         output_path + os.sep + surface_name + "_coordinates.func.gii",
         output_path + os.sep + surface_name + "_coordinates_MEAN.func.gii"))
     
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-convert -to-nifti {} {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-convert -to-nifti '{}' '{}'".format(
         output_path + os.sep + surface_name + "_coordinates_MEAN.func.gii",
         output_path + os.sep + surface_name + "_coordinates_MEAN.nii.gz"))
     
@@ -192,7 +192,7 @@ def create_metric_from_pseudo_nifti(metric_name, metric_values, surface_filepath
     
     nii_new.to_filename(output_path + os.sep + metric_name + "_" + surface_name + ".nii.gz")
     
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-convert -from-nifti {} {} {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-convert -from-nifti '{}' '{}' '{}'".format(
         output_path + os.sep + metric_name + "_" + surface_name + ".nii.gz",
         surface_filepath,
         output_path + os.sep + metric_name + "_" + surface_name + ".func.gii"))
@@ -205,7 +205,7 @@ def erode_metric(metric_filepath, surface_filepath, erosion_factor):
     
     import os
     
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-erode {} {} {} {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-erode '{}' '{}' '{}' '{}'".format(
         metric_filepath,
         surface_filepath,
         str(erosion_factor), 
@@ -270,32 +270,32 @@ def create_avoidance_mask(simnibs_mesh_filepath, surface_filepath, erosion_facto
     avoidance_mask = []
     
     # create binary mask of final tissues file
-    os.system(_FSL_PATH + os.sep + "fslmaths {} -bin {}".format(
+    os.system(_FSL_PATH + os.sep + "fslmaths '{}' -bin '{}'".format(
         simnibs_mesh_path + os.sep +"final_tissues.nii.gz",
         output_path + os.sep +"final_tissues_bin.nii.gz"))
         
     # fill holes (i.e. air cavities/sinuses) in binarzed mask
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -volume-fill-holes {} {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -volume-fill-holes '{}' '{}'".format(
         output_path + os.sep +"final_tissues_bin.nii.gz",
         output_path + os.sep +"final_tissues_bin_filled.nii.gz"))
     
     # create mask of holes (air cavities/sinuses) by subtracting the previously generated masks
-    os.system(_FSL_PATH + os.sep + "fslmaths {} -sub {} {}".format(
+    os.system(_FSL_PATH + os.sep + "fslmaths '{}' -sub '{}' '{}'".format(
         output_path + os.sep +"final_tissues_bin_filled.nii.gz",
         output_path + os.sep +"final_tissues_bin.nii.gz",
         output_path + os.sep +"final_tissues_air.nii.gz"))
 
     # create 3D stl/surface/mesh file from mask
-    os.system(_FREESURFER_PATH + os.sep + "mri_tessellate -n {} 1 {}".format(
+    os.system(_FREESURFER_PATH + os.sep + "mri_tessellate -n '{}' 1 '{}'".format(
         output_path + os.sep +"final_tissues_air.nii.gz",
         output_path + os.sep +"final_tissues_air"))
-    os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}".format(
-        output_path + os.sep +"final_tissues_air ",
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert '{}' '{}'".format(
+        output_path + os.sep +"final_tissues_air",
         output_path + os.sep +"final_tissues_air.surf.gii"))
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-smoothing {} 0.5 10 {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-smoothing '{}' 0.5 10 '{}'".format(
         output_path + os.sep +"final_tissues_air.surf.gii",
         output_path + os.sep +"final_tissues_air.surf.gii"))
-    os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}".format(
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert '{}' '{}'".format(
         output_path + os.sep +"final_tissues_air.surf.gii",
         output_path + os.sep +"final_tissues_air.stl"))
     
@@ -431,24 +431,24 @@ def stl_from_nii(nii_filepath, threshold):
     nii_name = nii_name + "_3Dmodel"
     
     ### create 3D model/surface/mesh (stl file) from target ROI mask
-    os.system(_FSL_PATH + os.sep + "fslmaths {} -thr {} -bin {}".format(
+    os.system(_FSL_PATH + os.sep + "fslmaths '{}' -thr '{}' -bin '{}'".format(
         nii_filepath,
         str(threshold),
         nii_path + os.sep + nii_name))
     
-    os.system(_FREESURFER_PATH + os.sep + "mri_tessellate -n {}.nii.gz 1 {}".format(
+    os.system(_FREESURFER_PATH + os.sep + "mri_tessellate -n '{}'.nii.gz 1 '{}'".format(
         nii_path + os.sep + nii_name,
         nii_path + os.sep + nii_name))
     
-    os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}.surf.gii".format(
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert '{}' '{}'.surf.gii".format(
         nii_path + os.sep + nii_name,
         nii_path + os.sep + nii_name))
     
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-smoothing {}.surf.gii 0.5 10 {}.surf.gii".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-smoothing '{}'.surf.gii 0.5 10 '{}'.surf.gii".format(
         nii_path + os.sep + nii_name,
         nii_path + os.sep + nii_name))
     
-    os.system(_FREESURFER_PATH + os.sep + "mris_convert {}.surf.gii {}.stl".format(
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert '{}'.surf.gii '{}'.stl".format(
         nii_path + os.sep + nii_name,
         nii_path + os.sep + nii_name))
     
@@ -465,7 +465,7 @@ def smooth_metric(metric_filepath, surface_filepath, FWHM):
     metric_filename = os.path.split(metric_filepath)[1]
     metric_name = metric_filename.replace(".func.gii", "")
     
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-smoothing {} {} {} {} -fwhm".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-smoothing '{}' '{}' '{}' '{}' -fwhm".format(
         surface_filepath,
         metric_filepath,
         str(FWHM),
@@ -477,7 +477,7 @@ def mask_metric(metric_filepath, mask_filepath):
     
     import os
     
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-mask {} {} {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-mask '{}' '{}' '{}'".format(
         metric_filepath,
         mask_filepath,
         metric_filepath))
@@ -492,7 +492,7 @@ def threshold_metric(metric_filepath, threshold):
     metric_filename = os.path.split(metric_filepath)[1]
     metric_name = metric_filename.replace(".func.gii", "")
     
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-math 'x < {}' {} -var x {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-math 'x < {}' '{}' -var x '{}'".format(
         str(threshold),
         metric_path + os.sep + metric_name + "_thresholded.func.gii",
         metric_filepath))
@@ -503,7 +503,7 @@ def add_structure_information(filepath, structure_label):
     
     import os
     
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -set-structure {} {} -surface-type RECONSTRUCTION".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -set-structure '{}' {} -surface-type RECONSTRUCTION".format(
         filepath,
         structure_label))
     
@@ -574,12 +574,12 @@ def transform_surface_model(surface_model_filepath, transform_filepath, output_f
     import os
     
     # transform transducer file
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-apply-affine {} {} {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-apply-affine '{}' '{}' '{}'".format(
         surface_model_filepath,
         transform_filepath,
         output_filepath))
 
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -set-structure {} {} -surface-type RECONSTRUCTION".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -set-structure '{}' {} -surface-type RECONSTRUCTION".format(
         output_filepath,
         structure))
     
@@ -714,9 +714,9 @@ def create_surface_ellipsoid(length, width, position_transform_filepath, referen
     nib.save(gii, output_path + os.sep +"ellipsoid.gii")
     
     # tranform .gii to .surf.gii file
-    os.system(_FREESURFER_PATH + os.sep + "mris_convert " +
-              output_path + os.sep +"ellipsoid.gii" + " " + 
-              output_filepath)
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert '" +
+              output_path + os.sep +"ellipsoid.gii" + "' '" + 
+              output_filepath +"'")
     
     os.remove(output_path + os.sep +"ellipsoid.gii")
     
@@ -793,9 +793,9 @@ def create_volume_ellipsoid(length, width, position_transform_filepath, referenc
     nib.save(gii, output_path + os.sep +"ellipsoid.gii")
     
     # tranform .gii to .surf.gii file
-    os.system(_FREESURFER_PATH + os.sep + "mris_convert " +
-              output_path + os.sep +"ellipsoid.gii" + " " + 
-              output_filepath)
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert '" +
+              output_path + os.sep +"ellipsoid.gii" + "' '" + 
+              output_filepath + "'")
     
     os.remove(output_path + os.sep +"ellipsoid.gii")
     
@@ -861,9 +861,9 @@ def create_surface_transducer_model(radius, height, output_filepath):
     nib.save(gii, output_path + os.sep +"transducer.gii")
     
     # tranform .gii to .surf.gii file
-    os.system(_FREESURFER_PATH + os.sep + "mris_convert " +
-              output_path + os.sep +"transducer.gii" + " " + 
-              output_filepath)
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert '" +
+              output_path + os.sep +"transducer.gii" + "' '" + 
+              output_filepath +"'")
     
     os.remove(output_path + os.sep +"transducer.gii")
 
@@ -1099,7 +1099,7 @@ def prepare_acoustic_simulation(vertex_number,
         
         create_surface_transducer_model(transducer_diameter/2, 15, output_filepath)
         transform_surface_model(output_filepath, transform_filepath, output_filepath, "CEREBELLUM")
-    os.system(_FREESURFER_PATH + os.sep + "mris_convert {} {}".format(output_filepath,output_filepath_stl))
+    os.system(_FREESURFER_PATH + os.sep + "mris_convert '{}' '{}'".format(output_filepath,output_filepath_stl))
 
         
     
@@ -1174,12 +1174,12 @@ def prepare_acoustic_simulation(vertex_number,
 
     
     # create metric from surface
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-coordinates-to-metric {} {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -surface-coordinates-to-metric '{}' '{}'".format(
         ellipsoid_output_filepath,
         output_path_vtx + os.sep +"focus.func.gii"))
 
     # map metric to volume
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-to-volume-mapping {} {} {} {} -ribbon-constrained {} {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -metric-to-volume-mapping '{}' '{}' '{}' '{}' -ribbon-constrained '{}' '{}'".format(
         output_path_vtx + os.sep +"focus.func.gii",
         ellipsoid_output_filepath,
         t1_filepath,
@@ -1188,7 +1188,7 @@ def prepare_acoustic_simulation(vertex_number,
         ellipsoid_output_filepath))
     
     # fill holes in volume
-    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -volume-fill-holes {} {}".format(
+    os.system(_CONNECTOME_PATH + os.sep + "wb_command -logging OFF -volume-fill-holes '{}' '{}'".format(
         ellipsoid_volume_output_filepath,
         ellipsoid_volume_output_filepath))
 
@@ -1260,4 +1260,4 @@ def prepare_acoustic_simulation(vertex_number,
 
         create_scene(placement_scene_template_filepath, output_path_vtx + os.sep +"scene.scene", scene_variable_names, scene_variable_values)
 
-        os.system(_CONNECTOME_PATH + os.sep + "wb_view -logging OFF " + output_path_vtx + os.sep +"scene.scene")
+        os.system(_CONNECTOME_PATH + os.sep + "wb_view -logging OFF '" + output_path_vtx + "'" + os.sep +"scene.scene")
