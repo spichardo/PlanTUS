@@ -16,6 +16,7 @@ from __future__ import annotations
 import os
 import glob
 import shutil
+import subprocess
 from typing import List, Sequence, Tuple
 
 import numpy as np
@@ -306,8 +307,8 @@ def compute_surface_metrics(surface_filepath: str) -> Tuple[np.ndarray, np.ndarr
     coords_func = os.path.join(out_dir, f"{base}_coordinates.func.gii")
     norms_func = os.path.join(out_dir, f"{base}_normals.func.gii")
 
-    os.system(f"'{wb_command_cmd}' -logging OFF -surface-coordinates-to-metric '{surface_filepath}' '{coords_func}'")
-    os.system(f"'{wb_command_cmd}' -logging OFF -surface-normals '{surface_filepath}' '{norms_func}'")
+    run_wb(["-surface-coordinates-to-metric", surface_filepath, coords_func])
+    run_wb(["-surface-normals", surface_filepath, norms_func])
 
     coords = np.asarray(surface.load_surf_data(coords_func),dtype=float)
     norms = np.asarray(surface.load_surf_data(norms_func),dtype=float)
@@ -335,9 +336,9 @@ def create_pseudo_metric_nifti_from_surface(surface_filepath: str) -> Tuple[nib.
     coords_mean_func = os.path.join(out_dir, f"{base}_coordinates_MEAN.func.gii")
     coords_mean_nii = os.path.join(out_dir, f"{base}_coordinates_MEAN.nii.gz")
 
-    os.system(f"'{wb_command_cmd}' -logging OFF -surface-coordinates-to-metric '{surface_filepath}' '{coords_func}'")
-    os.system(f"'{wb_command_cmd}' -logging OFF -metric-reduce '{coords_func}' MEAN '{coords_mean_func}'")
-    os.system(f"'{wb_command_cmd}' -logging OFF -metric-convert -to-nifti '{coords_mean_func}' '{coords_mean_nii}'")
+    run_wb(["-surface-coordinates-to-metric", surface_filepath, coords_func])
+    run_wb(["-metric-reduce", coords_func, "MEAN", coords_mean_func])
+    run_wb(["-metric-convert", "-to-nifti", coords_mean_func, coords_mean_nii])
 
     nii = image.load_img(coords_mean_nii)
     data = nii.get_fdata()
@@ -416,21 +417,19 @@ def create_metric_from_pseudo_nifti(metric_name: str,
     nii_new = nib.nifti1.Nifti1Image(nii_data_tmp, nii.affine, header=nii.header)
 
     nii_new.to_filename(output_path + os.sep + metric_name + "_" + surface_name + ".nii.gz")
-
-    os.system("'{}' -logging OFF -metric-convert -from-nifti '{}' '{}' '{}'".format(
-        wb_command_cmd,
+    run_wb([
+        "-metric-convert", "-from-nifti",
         output_path + os.sep + metric_name + "_" + surface_name + ".nii.gz",
         surface_filepath,
-        output_path + os.sep + metric_name + "_" + surface_name + ".func.gii"))
+        output_path + os.sep + metric_name + "_" + surface_name + ".func.gii"
+    ])
 
     os.remove(output_path + os.sep + metric_name + "_" + surface_name + ".nii.gz")
 
 
 def erode_metric(metric_filepath: str, surface_filepath: str, erosion_factor: float) -> None:
     """Erode a metric on the surface using Workbench in-place."""
-    os.system(
-        f"'{wb_command_cmd}' -logging OFF -metric-erode '{metric_filepath}' '{surface_filepath}' {erosion_factor} '{metric_filepath}'"
-    )
+    run_wb(["-metric-erode", metric_filepath, surface_filepath, str(erosion_factor), metric_filepath])
 
 
 # -----------------------------------------------------------------------------
@@ -552,7 +551,7 @@ def create_avoidance_mask(simnibs_mesh_filepath: str,
     # filled = ndimage.binary_fill_holes(vol, se_n)
     # filled_out = nib.Nifti1Image(filled.astype(np.uint16), aff)
     # nib.save(filled_out, filled_path)
-    os.system(f"'{wb_command_cmd}' -logging OFF -volume-fill-holes '{bin_path}' '{filled_path}'")
+    run_wb(["-volume-fill-holes", bin_path, filled_path])
 
     # ---- 3) get air-only mask = filled - bin
     air_path = os.path.join(out_dir, "final_tissues_air.nii.gz")
@@ -566,7 +565,7 @@ def create_avoidance_mask(simnibs_mesh_filepath: str,
     mesh_io.write_stl(mesh, air_stl)
 
     # Optional smoothing using Workbench (kept)
-    os.system(f"'{wb_command_cmd}' -logging OFF -surface-smoothing '{air_gii}' 0.5 10 '{air_gii}'")
+    run_wb(["-surface-smoothing", air_gii, "0.5", "10", air_gii])
 
     # ---- 5) intersect inward normals from skin with air cavities
     skin_coords, skin_normals = compute_surface_metrics(surface_filepath)
@@ -712,7 +711,7 @@ def stl_from_nii(nii_filepath: str, threshold: float) -> None:
     gii_path = os.path.join(out_dir, base + ".surf.gii")
     stl_path = os.path.join(out_dir, base + ".stl")
     _write_gifti_surface(verts, faces, gii_path)
-    os.system(f"'{wb_command_cmd}' -logging OFF -surface-smoothing '{gii_path}' 0.5 10 '{gii_path}'")
+    run_wb(["-surface-smoothing", gii_path, "0.5", "10", gii_path])
 
     surf_gii_to_stl_with_simnibs(gii_path, stl_path)
 
@@ -735,22 +734,19 @@ def smooth_metric(metric_filepath: str, surface_filepath: str, FWHM: float) -> N
     """Surface-morphometric smoothing (FWHM in mm) via Workbench."""
     out_dir, fname = os.path.split(metric_filepath)
     name = fname.replace(".func.gii", "")
-    os.system(
-        "'{}' -logging OFF -metric-smoothing '{}' '{}' '{}' '{}' -fwhm".format(
-            wb_command_cmd,
-            surface_filepath,
-            metric_filepath,
-            str(FWHM),
-            os.path.join(out_dir, f"{name}_s{FWHM}.func.gii"),
-        )
-    )
+    run_wb([
+        "-metric-smoothing",
+        surface_filepath,
+        metric_filepath,
+        str(FWHM),
+        os.path.join(out_dir, f"{name}_s{FWHM}.func.gii"),
+        "-fwhm"
+    ])
 
 
 def mask_metric(metric_filepath: str, mask_filepath: str) -> None:
     """Apply a binary mask to a metric (in-place) via Workbench."""
-    os.system(
-        f"'{wb_command_cmd}' -logging OFF -metric-mask '{metric_filepath}' '{mask_filepath}' '{metric_filepath}'"
-    )
+    run_wb(["-metric-mask", metric_filepath, mask_filepath, metric_filepath])
 
 
 def threshold_metric(metric_filepath: str, threshold: float) -> None:
@@ -758,17 +754,24 @@ def threshold_metric(metric_filepath: str, threshold: float) -> None:
     out_dir, fname = os.path.split(metric_filepath)
     name = fname.replace(".func.gii", "")
     out = os.path.join(out_dir, f"{name}_thresholded.func.gii")
-    os.system(
-        f"'{wb_command_cmd}' -logging OFF -metric-math 'x < {threshold}' '{out}' -var x '{metric_filepath}'"
-    )
+    run_wb(["-metric-math", f"x < {threshold}", out, "-var", "x", metric_filepath])
 
 
 def add_structure_information(filepath: str, structure_label: str) -> None:
     """Annotate a surface or metric with a Workbench structure label."""
-    os.system(
-        f"'{wb_command_cmd}' -logging OFF -set-structure '{filepath}' {structure_label} -surface-type RECONSTRUCTION"
-    )
+    run_wb(["-set-structure", filepath, structure_label, "-surface-type", "RECONSTRUCTION"])
 
+def run_wb(args,print_wb_output=False):
+    """Run workbench as subprocess"""
+    result = subprocess.run(
+        [wb_command_cmd] + args,
+        capture_output=True, text=True
+    )
+    if print_wb_output:
+        print("STDOUT:", result.stdout)
+        print("STDERR:", result.stderr)
+        print("RETURNCODE:", result.returncode)
+    return result
 
 # -----------------------------------------------------------------------------
 # Localite / k-Plan utilities
@@ -842,9 +845,7 @@ def transform_surface_model(surface_model_filepath: str,
                             output_filepath: str,
                             structure: str) -> None:
     """Apply a 4×4 affine to a GIFTI surface model using Workbench."""
-    os.system(
-        f"'{wb_command_cmd}' -logging OFF -surface-apply-affine '{surface_model_filepath}' '{transform_filepath}' '{output_filepath}'"
-    )
+    run_wb(["-surface-apply-affine", surface_model_filepath, transform_filepath, output_filepath])
     add_structure_information(output_filepath, structure)
 
 
@@ -1195,11 +1196,9 @@ def prepare_acoustic_simulation(vertex_number: int,
     create_surface_ellipsoid(FLHM - 1, 4, focus_transform_path, t1_filepath, ellipsoid_small)
 
     focus_metric = os.path.join(output_path_vtx, "focus.func.gii")
-    os.system(f"'{wb_command_cmd}' -logging OFF -surface-coordinates-to-metric '{ellipsoid_surf}' '{focus_metric}'")
-    os.system("'{}' -logging OFF -metric-to-volume-mapping '{}' '{}' '{}' '{}' -ribbon-constrained '{}' '{}'".format(
-        wb_command_cmd, focus_metric, ellipsoid_surf, t1_filepath, ellipsoid_vol, ellipsoid_small, ellipsoid_surf
-    ))
-    os.system(f"'{wb_command_cmd}' -logging OFF -volume-fill-holes '{ellipsoid_vol}' '{ellipsoid_vol}'")
+    run_wb(["-surface-coordinates-to-metric", ellipsoid_surf, focus_metric])
+    run_wb(["-metric-to-volume-mapping", focus_metric, ellipsoid_surf, t1_filepath, ellipsoid_vol, "-ribbon-constrained", ellipsoid_small, ellipsoid_surf])
+    run_wb(["-volume-fill-holes", ellipsoid_vol, ellipsoid_vol])
 
     # binarize first frame
     ell = image.load_img(ellipsoid_vol)
