@@ -855,6 +855,11 @@ def create_kps_file_for_kPlan(position_matrix_filepath: str, kps_filename: str) 
     import scipy
     import h5py
 
+    if np.lib.NumpyVersion(np.__version__) < '2.0.0':
+        strfunc = np.string_
+    else:
+        strfunc = np.bytes_
+
     out_dir, _ = os.path.split(position_matrix_filepath)
     out_file = os.path.join(out_dir, f"{kps_filename}.kps")
 
@@ -864,9 +869,9 @@ def create_kps_file_for_kPlan(position_matrix_filepath: str, kps_filename: str) 
     with h5py.File(out_file, "w") as f:
         dset = f.create_dataset("/1/position_transform", (1, 4, 4), dtype="float32")
         dset[:] = M
-        f["/1"].attrs.create("transform_label", np.string_("Localite transducer position"))
-        f.attrs.create("application_name", np.string_("k-Plan"))
-        f.attrs.create("file_type", np.string_("k-Plan Transducer Position"))
+        f["/1"].attrs.create("transform_label", strfunc("Localite transducer position"))
+        f.attrs.create("application_name", strfunc("k-Plan"))
+        f.attrs.create("file_type", strfunc("k-Plan Transducer Position"))
         f.attrs.create("number_transforms", np.array([1], dtype=np.uint64))
 
 
