@@ -1,0 +1,48 @@
+# Transducer-specific variables ------------------------------------------------
+# Maximum minimum, and optimal focal depth of transducer (in mm)
+max_distance: 109.0
+min_distance: 62.1
+optimal_distance: 150.0
+# Aperture diameter (in mm)
+transducer_diameter: 64.0
+# Maximum allowed angle for tilting of TUS transducer (in degrees)
+max_angle: 15.0
+# Offset between radiating surface and exit plane of transducer (in mm)
+plane_offset: 10.82
+# Additional offset between skin and exit plane of transducer (in mm;
+# e.g., due to addtional gel/silicone pad)
+additional_offset: 3.0
+# Focal distance and corresponding FLHM values (both in mm) according to, e.g.,
+# calibration report
+focal_distance_list:
+  - 62.1
+  - 66.6
+  - 72.4
+  - 79.7
+  - 87.8
+  - 93.2
+  - 101.7
+  - 107.1
+  - 109.0
+# Focal length to half maximum (FLHM) values (in mm)
+flhm_list:
+  - 39.6
+  - 45.4
+  - 52.4
+  - 60.3
+  - 69.0
+  - 70.4
+  - 82.0
+  - 84.1
+  - 84.8
+# User-defined metric weights --------------------------------------------------
+# Note: each in [0,1], sum = 1
+weight_skin_target_distances: 0.2
+weight_skin_target_angles: 0.2
+weight_skin_target_intersections: 0.2
+weight_skin_skull_angles: 0.2
+weight_skull_thickness: 0.2
+# Setup ------------------------------------------------------------------------
+# Path to connectome workbench binaries
+connectome_wb_path: /usr/local/workbench/bin_linux64
+

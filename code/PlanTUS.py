@@ -21,6 +21,7 @@ from typing import List, Sequence, Tuple
 
 import numpy as np
 import nibabel as nib
+import simnibs
 
 
 # -----------------------------------------------------------------------------
@@ -774,8 +775,34 @@ def run_wb(args,print_wb_output=False):
     return result
 
 # -----------------------------------------------------------------------------
-# Localite / k-Plan utilities
+# Localite / Brainsight / BabelBrain / k-Plan utilities
 # -----------------------------------------------------------------------------
+
+def create_SimNIBS_position_matrix(center_coordinates: Sequence[float], z_vector: Sequence[float]) -> np.ndarray:
+    """Build a 4×4 SimNIBS-style pose matrix from a center and an z-axis.
+
+    The y-axis is chosen orthogonal to x via a random vector, and x is z×y.
+    """
+    center = np.asarray(center_coordinates, dtype=float)
+    z = np.asarray(z_vector, dtype=float)
+
+    M = np.zeros((4, 4), dtype=float)
+    M[3, 3] = 1.0
+    M[:3, 3] = center
+
+    z /= np.linalg.norm(z)
+    M[:3, 2] = z
+
+    y = np.random.randn(3)
+    y -= y.dot(z) * z
+    y /= np.linalg.norm(y)
+    M[:3, 1] = y
+
+    x = np.cross(z, y)
+    x /= np.linalg.norm(x)
+    M[:3, 0] = x
+    return M
+
 
 def create_Localite_position_matrix(center_coordinates: Sequence[float], x_vector: Sequence[float]) -> np.ndarray:
     """Build a 4×4 Localite-style pose matrix from a center and an x-axis.
@@ -824,6 +851,34 @@ def create_fake_XML_structure_for_Localite(Localite_position_matrix: np.ndarray,
         f'        </Element>\n'
     )
     return xml
+
+
+def export_Brainsight_trajectory(SimNIBS_position_matrix: np.ndarray,
+                                 output_filepath: str):
+    """Export trajectory text file for Brainsight."""
+
+    simnibs.brainsight().write(np.squeeze(SimNIBS_position_matrix), output_filepath, overwrite=True)
+
+
+def export_BabelBrain_trajectory(SimNIBS_position_matrix: np.ndarray,
+                                 target_center_coordinates: Sequence[float],
+                                 output_filepath: str):
+    """Export trajectory text file for BabelBrain."""
+
+    BabelBrain_position_matrix = SimNIBS_position_matrix.copy()
+    BabelBrain_position_matrix[0:3,3] = target_center_coordinates
+
+    simnibs.brainsight().write(np.squeeze(BabelBrain_position_matrix), output_filepath, overwrite=True)
+
+    with open(output_filepath, 'r') as file:
+      filedata = file.read()
+    filedata = filedata.replace('NIfTI:Aligned', 'Brainsight')
+    filedata = filedata.replace('SimNIBS v4.5.0', 'PlanTUS')
+    filedata = filedata.replace('# Units: millimetres, degrees, milliseconds, and microvolts',
+                                '# X=right->left, Y=anterior->posterior, Z=inferior->superior\n# Units: millimetres, degrees, milliseconds, and microvolts')
+    filedata = filedata.replace('000', 'PlanTUS transducer position')
+    with open(output_filepath, 'w') as file:
+      file.write(filedata)
 
 
 def convert_Localite_to_kPlan_position_matrix(Localite_position_matrix: np.ndarray) -> np.ndarray:
@@ -1151,6 +1206,17 @@ def prepare_acoustic_simulation(vertex_number: int,
                      {'position_matrix': position_matrix_kPlan})
     np.savetxt(os.path.join(output_path_vtx, f"position_matrix_{target_roi_name}_{suffix}_kPlan.txt"),
                position_matrix_kPlan)
+
+    # --- Brainsight & Babelbrain trajectories
+    position_matrix_SimNIBS = create_SimNIBS_position_matrix(transducer_center_coordinates, vertex_vector)
+
+    export_Brainsight_trajectory(position_matrix_SimNIBS,
+                                 os.path.join(output_path_vtx, f"trajectory_{target_roi_name}_{suffix}_Brainsight.txt"))
+
+    target_center_coordinates = roi_center_of_gravity(target_roi_filepath)
+    export_BabelBrain_trajectory(position_matrix_SimNIBS,
+                                 target_center_coordinates,
+                                 os.path.join(output_path_vtx, f"trajectory_{target_roi_name}_{suffix}_BabelBrain.txt"))
 
     # --- Optional: transform transducer model
     transform = np.loadtxt(os.path.join(output_path_vtx, f"position_matrix_{target_roi_name}_{suffix}_kPlan.txt"))
